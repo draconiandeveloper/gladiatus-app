@@ -1,14 +1,12 @@
 <?php
-
 namespace Gladiatus;
-
 define('GLAD_BACKEND', true);
+
 require_once 'config.php';
 require_once 'core/autoload.php';
-use Core\Variable;
 
-$vars = new Core\Variable('unix:///run/redis.sock', 0, true);
-
-$vars->del('h');
-$vars->hSet('h', 'key1', 'hello');
-echo $vars->hGet('h', 'key1');
+switch ($_SERVER['REQUEST_URI']) {
+    case '/views/2fa':
+        require __DIR__ . '/views/totp-token.php';
+        break;
+}

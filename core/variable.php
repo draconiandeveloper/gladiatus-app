@@ -1,7 +1,13 @@
 <?php
 
 namespace Gladiatus\Core;
-require_once 'security.php';
+
+/// A neat little trick that I stole from MyBB's code that is used to prevent any attempted access to the backend files from the frontend.
+
+if (!defined('GLAD_BACKEND')) {
+    http_response_code(404);
+    die('File not found.');
+}
 
 class Variable extends \Redis {
     private array $options = [

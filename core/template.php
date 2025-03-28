@@ -11,11 +11,18 @@
  */
 
 namespace Gladiatus\Core;
-require_once 'security.php';
 
-/// We will require database access to push and pull the template data to and from the database.
+/// A neat little trick that I stole from MyBB's code that is used to prevent any attempted access to the backend files from the frontend.
 
-use Core\Database as Db;
+if (!defined('GLAD_BACKEND')) {
+    http_response_code(404);
+    die('File not found.');
+}
+
+/// We will likely end up caching our template data in the database for long-term storage.
+
+use Core\Variable;
+use Core\Database;
 
 /**
  * The core template class that handles all of the frontend HTML and CSS data.

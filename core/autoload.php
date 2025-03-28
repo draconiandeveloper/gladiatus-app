@@ -11,7 +11,13 @@
  */
 
 namespace Gladiatus;
-require_once 'security.php';
+
+/// A neat little trick that I stole from MyBB's code that is used to prevent any attempted access to the backend files from the frontend.
+
+if (!defined('GLAD_BACKEND')) {
+    http_response_code(404);
+    die('File not found.');
+}
 
 /**
  * Initialize our class autoloader function that will be used to simplify

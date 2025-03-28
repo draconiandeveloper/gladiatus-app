@@ -11,7 +11,13 @@
  */
 
 namespace Gladiatus\Core;
-require_once 'security.php';
+
+/// A neat little trick that I stole from MyBB's code that is used to prevent any attempted access to the backend files from the frontend.
+
+if (!defined('GLAD_BACKEND')) {
+    http_response_code(404);
+    die('File not found.');
+}
 
 /**
  * Define some global variables in lieu of an enumerator due
@@ -225,6 +231,7 @@ class Database {
          * @property ATTR_ORACLE_NULLS       Determines how we should handle NULL values in the database, convert them to empty strings.
          * @property ATTR_EMULATE_PREPARES   Determines whether or not we should use prepared statements (only available for MySQL/MariaDB).
          * @property ATTR_PERSISTENT         Determines whether or not the database connection should be kept open when there are no active queries.
+         * @property ATTR_TIMEOUT            The number of seconds to try to connect ot the database until giving up and throwing an error.
          */
 
         $options = [
@@ -232,13 +239,20 @@ class Database {
             \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_ORACLE_NULLS       => \PDO::NULL_EMPTY_STRING,
             \PDO::ATTR_EMULATE_PREPARES   => false,
-            \PDO::ATTR_PERSISTENT         => true
+            \PDO::ATTR_PERSISTENT         => false,
+            \PDO::ATTR_TIMEOUT            => 30,
         ];
 
         /// Set a private class variable to store the PDO connection.
         
-        $this->conn = new \PDO($dsn, $username, $password, $options);
-        return true;
+        try {
+            $this->conn = new \PDO($dsn, $username, $password, $options);
+            return true;
+        } catch(\PDOException $ex) {
+            if ($GLOBALS['debug']) echo "<pre><b>Database:</b> $ex</pre>";
+        }
+
+        return false;
     }
 
     /**
@@ -252,7 +266,7 @@ class Database {
      * @return boolean "True" if the SQL query was successfully made.
      */
 
-    public function safe_query(array &$return, string $query, int $function = DBFUNC_SET, array $params=[]) : bool {
+    public function safe_query(array &$return, string $query, array $params = [], int $function = DBFUNC_SET) : bool {
         
         /// We cannot make any SQL queries to a database without connecting to it beforehand.
 
