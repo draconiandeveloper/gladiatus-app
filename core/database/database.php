@@ -94,18 +94,17 @@ class Database extends \PDO {
     }
 
     /**
-     * Statically accessible function to execute SQL queries in a safe manner.
+     * Function to execute SQL queries in a safe manner.
      *
-     * @param \PDO   $conn    - The PHP Data Object connection for our database.
      * @param string $query   - The SQL query to be executed.
      * @param array  $params  - An array of values to be filtered.
      * 
      * @return array          The results of the SQL query.
      */
 
-    public static function run(\PDO $conn, string $query, ?array $params = null) : array {
+    public function run(string $query, ?array $params = null) : array {
         try {
-            $prepared = $conn->prepare($query);
+            $prepared = parent::prepare($query);
             $prepared->execute($params ?? []);
         
             return [ 'count' => $prepared->rowCount(),

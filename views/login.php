@@ -1,41 +1,86 @@
 <?php
+
 namespace Gladiatus;
-use Core\Database;
+use Core\Database\PostgreSQL;
+use Core\Router;
 
-$db = new Core\Database($GLOBALS['dbms']);
-if (!$db->is_open())
-    $db->connect($_ENV['POSTGRES_HOST'], $_ENV['POSTGRES_PORT'], $_ENV['POSTGRES_DB'], $_ENV['POSTGRES_USER'], $_ENV['POSTGRES_PASSWORD']);
+#[Router('POST', '/login')]
+class LoginPostController extends Core\Database\PostgreSQL {
+    private array $errors = [];
 
-session_start();
-$errors = [];
+    private function _handle_login(string $username, string $password) {
+        $results = parent::run('SELECT * FROM users WHERE username=? LIMIT 1', [$username]);
 
-function handle_login(string $username, string $password, array $results) {
-    if (!password_verify($password, $results[0]['passhash'])) {
-        $errors[] = '<span id="errortext">Incorrect password!</span>';
-        return;
+        if ($results['count'] === 0) {
+            $this->errors[] = 'No account found with that username!';
+            return;
+        }
+
+        if (!password_verify($password, $results['data'][0]['passhash'])) {
+            $this->errors[] = 'Incorrect password!';
+            return;
+        }
+
+        if (!array_key_exists($username, $_SESSION)) {
+            $_SESSION[$username] = [
+                'logged_in' => true,
+                'user_id' => $results['data'][0]['uid'],
+                'access' => $results['data'][0]['access'],
+            ];
+
+            return;
+        }
+
+        if (!$_SESSION[$username]['logged_in']) {
+            $_SESSION[$username]['logged_in'] = true;
+            return;
+        }
     }
 
-    $_SESSION = [
-        'logged_in' => true,
-        'user_id' => $results[0]['uid'],
-        'access' => $results[0]['access'],
-        'username' => $results[0]['username'],
-    ];
+    public function __construct() {
+        parent::__construct(
+            $_ENV['POSTGRES_HOST'],
+            $_ENV['POSTGRES_PORT'],
+            $_ENV['POSTGRES_USER'],
+            $_ENV['POSTGRES_PASSWORD'],
+            $_ENV['POSTGRES_DB']
+        );
+    }
+
+    public function __invoke() {
+        if (filter_has_var(INPUT_POST, 'login')) {
+            $username = filter_input(INPUT_POST, 'username');
+            $password = filter_input(INPUT_POST, 'password');
+
+            $this->_handle_login($username, $password);
+
+            foreach ($this->errors as $error)
+                echo "<pre>{$error}</pre><br>";
+
+            return <<<HTML
+            <form method="POST" action="/login">
+                <label for="username">Username</label>
+                <input type="text" name="username"><br>
+                <label for="password">Password</label>
+                <input type="password" name="password"><br>
+                <input type="submit" name="login" value="Login">
+            </form>
+            HTML;
+        }
+    }
 }
 
-if (filter_has_var(INPUT_POST, 'login')) {
-    if (!filter_has_var(INPUT_POST, 'username'))
-        $errors[] = '<span id="errortext">Username required!</span>';
-
-    if (!filter_has_var(INPUT_POST, 'password'))
-        $errors[] = '<span id="errortext">Password required!</span>';
-
-    $username = filter_input(INPUT_POST, 'username');
-    $password = filter_input(INPUT_POST, 'password');
-
-    $query = [];
-    $db->safe_query($query, 'SELECT * FROM users WHERE username=? LIMIT 1', [$username], DBFUNC_GET);
-
-    if (count($query) > 0) handle_login($username, $password, $query);
-    $errors[] = '<span id="errortext">Account does not exist!</span>';
+#[Router('GET', '/login')]
+class LoginGetController {
+    public function __invoke() {
+        return <<<HTML
+        <form method="POST" action="/login">
+            <label for="username">Username</label>
+            <input type="text" name="username"><br>
+            <label for="password">Password</label>
+            <input type="password" name="password"><br>
+            <input type="submit" name="login" value="Login">
+        </form>
+        HTML;
+    }
 }
