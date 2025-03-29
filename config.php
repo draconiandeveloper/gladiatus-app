@@ -1,13 +1,12 @@
 <?php
 
-/*
+/**
  * Gladiatus rewrite
  * 
  * @author Dracovian (Github)
  * @author KimChoJapFan (Ragezone)
  * 
  * @license 0BSD
- *
  */
 
 namespace Gladiatus;
@@ -26,6 +25,7 @@ header_remove('X-Powered-By');
 /// Though we really shouldn't be using superglobals, this is a nicety that we can keep track of quite readily.
 
 $GLOBALS['debug'] = true;
+$GLOBALS['hash'] = PASSWORD_ARGON2ID;
 
 /// Disable error reporting if debug mode is enabled.
 
@@ -35,6 +35,6 @@ ini_set('display_errors', $GLOBALS['debug']);
 
 ini_set('session.save_handler', 'redis');
 ini_set('redis.session.compression', 'zstd');
-ini_set('redis.session.compression_level', 5);
+ini_set('redis.session.compression_level', 3);
 ini_set('session.save_path', 'unix:///run/redis.sock?persistent=1&weight=1&database=0');
 

@@ -2,11 +2,11 @@
 namespace Gladiatus;
 define('GLAD_BACKEND', true);
 
-require_once 'config.php';
-require_once 'core/autoload.php';
-
 switch ($_SERVER['REQUEST_URI']) {
-    case '/views/2fa':
-        require __DIR__ . '/views/totp-token.php';
+    case '/login':
+        require_once __DIR__ . '/views/login.php';
+        break;
+    case '/example':
+        require_once __DIR__ . '/example.php';
         break;
 }
